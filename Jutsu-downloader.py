@@ -174,7 +174,7 @@ set_appearance_mode("dark")
 set_default_color_theme("blue")
 
 root = CTk()
-root.title("Jutsu Downloader")
+root.title("Jut.su Downloader")
 root.geometry("700x450")
 
 frame = CTkFrame(root)
