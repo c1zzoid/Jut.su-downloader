@@ -11,6 +11,7 @@ from pynput import keyboard
 
 stop_download = False
 current_episode_label = None
+skip_fillers = False
 
 def get_video_urls(page_url, resolution='480'):
     headers = {
@@ -23,6 +24,11 @@ def get_video_urls(page_url, resolution='480'):
 
     soup = BeautifulSoup(response.text, 'html.parser')
     video_urls = []
+
+    title_tag = soup.find('h2', class_='header_video anime_padding_for_title_post_naruto')
+    if title_tag and 'филлер' in title_tag.get('title', ''):
+        print(f"Эпизод {page_url} является филлером. Пропускаем.")
+        return []
 
     source_tags = soup.find_all('source', {'res': resolution})
     print(f"Найдено {len(source_tags)} исходные теги с разрешением {resolution} на {page_url}")
@@ -91,7 +97,7 @@ def create_context_menu(widget):
     widget.bind("<Button-3>", lambda event: menu.tk_popup(event.x_root, event.y_root))
 
 def start_download(url, start_episode, end_episode, output_directory, resolution):
-    global stop_download, current_episode_label
+    global stop_download, current_episode_label, skip_fillers
 
     stop_download = False
 
@@ -164,6 +170,11 @@ def on_stop_download():
 def on_paste(key):
     root.focus_get().insert(INSERT, root.clipboard_get())
 
+def on_toggle_skip_fillers():
+    global skip_fillers
+    skip_fillers = not skip_fillers
+    skip_fillers_button.configure(text="Не качать филлеры" if skip_fillers else "Качать все")
+
 listener = keyboard.GlobalHotKeys({
     '<ctrl>+v': on_paste,
     '<ctrl>+V': on_paste
@@ -174,7 +185,7 @@ set_appearance_mode("dark")
 set_default_color_theme("blue")
 
 root = CTk()
-root.title("Jut.su! Downloader")
+root.title("Jutsu Downloader")
 root.geometry("700x450")
 
 frame = CTkFrame(root)
@@ -214,13 +225,16 @@ resolutions = ["360", "480", "720", "1080"]
 resolution_menu = CTkOptionMenu(frame, variable=resolution_var, values=resolutions)
 resolution_menu.grid(row=4, column=1, pady=10, padx=10, sticky='w')
 
+skip_fillers_button = CTkButton(frame, text="Качать все", command=on_toggle_skip_fillers)
+skip_fillers_button.grid(row=5, column=0, pady=20, padx=10, sticky='e')
+
 start_button = CTkButton(frame, text="Начать загрузку", command=on_start_download)
-start_button.grid(row=5, column=0, pady=20, padx=10, sticky='e')
+start_button.grid(row=5, column=1, pady=20, padx=10, sticky='w')
 
 stop_button = CTkButton(frame, text="Остановить загрузку", command=on_stop_download)
-stop_button.grid(row=5, column=1, pady=20, padx=10, sticky='w')
+stop_button.grid(row=6, column=0, pady=20, padx=10, sticky='w')
 
 current_episode_label = CTkLabel(frame, text="")
-current_episode_label.grid(row=6, column=0, columnspan=2)
+current_episode_label.grid(row=7, column=0, columnspan=2)
 
 root.mainloop()
